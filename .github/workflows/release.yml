@@ -16,6 +16,9 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
+      - name: Resolve packages
+        run: xcodebuild -scheme OneLine -resolvePackageDependencies
+
       - name: Build
         run: |
           xcodebuild archive \
@@ -31,8 +34,29 @@ jobs:
       - name: Create DMG
         run: bash scripts/create-dmg.sh build/OneLine.app
 
+      - name: Sign update with Sparkle EdDSA
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          SIGN_TOOL=$(find build/OneLine.xcarchive -name "sign_update" -type f | head -1)
+          echo "$SPARKLE_PRIVATE_KEY" > /tmp/sparkle_key
+          SIG=$("$SIGN_TOOL" OneLine-*.dmg -f /tmp/sparkle_key)
+          rm /tmp/sparkle_key
+          echo "$SIG" > sparkle_signature.txt
+          cat sparkle_signature.txt
+
+      - name: Generate appcast
+        run: |
+          GENERATE_TOOL=$(find build/OneLine.xcarchive -name "generate_appcast" -type f | head -1)
+          mkdir -p appcast_dir
+          cp OneLine-*.dmg appcast_dir/
+          "$GENERATE_TOOL" appcast_dir
+          cp appcast_dir/appcast.xml .
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: OneLine-*.dmg
+          files: |
+            OneLine-*.dmg
+            appcast.xml
           generate_release_notes: true

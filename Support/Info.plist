@@ -23,7 +23,7 @@
     <key>SUFeedURL</key>
     <string>https://github.com/rachtsingh/oneline/releases/latest/download/appcast.xml</string>
     <key>SUPublicEDKey</key>
-    <string>PASTE_EDDSA_PUBLIC_KEY_HERE</string>
+    <string>Y+IGS4r/+p78Jp2mA1gGJWgPH256uIsVum19CFeYBvU=</string>
     <key>SUEnableAutomaticChecks</key>
     <true/>
 </dict>
