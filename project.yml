@@ -1,0 +1,32 @@
+name: OneLine
+options:
+  bundleIdPrefix: com.rachit
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "16.0"
+
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.0.0"
+
+targets:
+  OneLine:
+    type: application
+    platform: macOS
+    sources:
+      - Sources/OneLine
+    resources:
+      - path: Sources/OneLine/Resources
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.rachit.oneline
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        INFOPLIST_FILE: Support/Info.plist
+        GENERATE_INFOPLIST_FILE: false
+    dependencies:
+      - package: Sparkle

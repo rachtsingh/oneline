@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build
+        run: |
+          xcodebuild archive \
+            -scheme OneLine \
+            -configuration Release \
+            -archivePath build/OneLine.xcarchive \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_STYLE=Manual
+
+      - name: Extract app from archive
+        run: cp -R build/OneLine.xcarchive/Products/Applications/OneLine.app build/OneLine.app
+
+      - name: Create DMG
+        run: bash scripts/create-dmg.sh build/OneLine.app
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: OneLine-*.dmg
+          generate_release_notes: true
