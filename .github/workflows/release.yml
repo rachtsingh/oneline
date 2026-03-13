@@ -47,11 +47,15 @@ jobs:
           cat sparkle_signature.txt
 
       - name: Generate appcast
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
           SPARKLE_BIN=$(find build/DerivedData/SourcePackages/artifacts -path "*/Sparkle/bin" -type d | head -1)
+          echo "$SPARKLE_PRIVATE_KEY" > /tmp/sparkle_key
           mkdir -p appcast_dir
           cp OneLine-*.dmg appcast_dir/
-          "$SPARKLE_BIN/generate_appcast" appcast_dir
+          "$SPARKLE_BIN/generate_appcast" --ed-key-file /tmp/sparkle_key appcast_dir
+          rm /tmp/sparkle_key
           cp appcast_dir/appcast.xml .
 
       - name: Create GitHub Release
