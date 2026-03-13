@@ -17,7 +17,7 @@ jobs:
         run: xcodegen generate
 
       - name: Resolve packages
-        run: xcodebuild -scheme OneLine -resolvePackageDependencies
+        run: xcodebuild -scheme OneLine -resolvePackageDependencies -derivedDataPath build/DerivedData
 
       - name: Build
         run: |
@@ -25,6 +25,7 @@ jobs:
             -scheme OneLine \
             -configuration Release \
             -archivePath build/OneLine.xcarchive \
+            -derivedDataPath build/DerivedData \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGN_STYLE=Manual
 
@@ -38,19 +39,19 @@ jobs:
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
-          SIGN_TOOL=$(find build/OneLine.xcarchive -name "sign_update" -type f | head -1)
+          SPARKLE_BIN=$(find build/DerivedData/SourcePackages/artifacts -path "*/Sparkle/bin" -type d | head -1)
           echo "$SPARKLE_PRIVATE_KEY" > /tmp/sparkle_key
-          SIG=$("$SIGN_TOOL" OneLine-*.dmg -f /tmp/sparkle_key)
+          SIG=$("$SPARKLE_BIN/sign_update" OneLine-*.dmg -f /tmp/sparkle_key)
           rm /tmp/sparkle_key
           echo "$SIG" > sparkle_signature.txt
           cat sparkle_signature.txt
 
       - name: Generate appcast
         run: |
-          GENERATE_TOOL=$(find build/OneLine.xcarchive -name "generate_appcast" -type f | head -1)
+          SPARKLE_BIN=$(find build/DerivedData/SourcePackages/artifacts -path "*/Sparkle/bin" -type d | head -1)
           mkdir -p appcast_dir
           cp OneLine-*.dmg appcast_dir/
-          "$GENERATE_TOOL" appcast_dir
+          "$SPARKLE_BIN/generate_appcast" appcast_dir
           cp appcast_dir/appcast.xml .
 
       - name: Create GitHub Release
