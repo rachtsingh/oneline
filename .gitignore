@@ -4,3 +4,5 @@ DerivedData/
 .swiftpm/
 *.dmg
 reference/
+Secrets.xcconfig
+CLAUDE.md

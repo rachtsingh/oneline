@@ -26,5 +26,9 @@
     <string>Y+IGS4r/+p78Jp2mA1gGJWgPH256uIsVum19CFeYBvU=</string>
     <key>SUEnableAutomaticChecks</key>
     <true/>
+<key>SlackClientID</key>
+    <string>$(SLACK_CLIENT_ID)</string>
+    <key>SlackClientSecret</key>
+    <string>$(SLACK_CLIENT_SECRET)</string>
 </dict>
 </plist>

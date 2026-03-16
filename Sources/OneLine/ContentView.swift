@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var logManager = LogManager()
+    @ObservedObject private var slackManager = SlackManager.shared
     @State private var inputText = ""
 
     @Environment(\.colorScheme) private var colorScheme
@@ -34,6 +35,7 @@ struct ContentView: View {
                     .font(robotoMono(12))
                     .foregroundColor(.secondary)
                 Spacer()
+                slackMenuButton
                 Button {
                     chooseDirectory()
                 } label: {
@@ -77,7 +79,9 @@ struct ContentView: View {
                 font: NSFont(name: "Roboto Mono", size: 13) ?? .monospacedSystemFont(ofSize: 13, weight: .regular),
                 textColor: colorScheme == .dark ? NSColor(calibratedRed: 0xB0/255.0, green: 0xB8/255.0, blue: 0xC8/255.0, alpha: 1) : NSColor(calibratedRed: 0x3C/255.0, green: 0x3C/255.0, blue: 0x3C/255.0, alpha: 1)
             ) {
-                logManager.appendEntry(inputText)
+                let entry = inputText
+                logManager.appendEntry(entry)
+                slackManager.updateStatus(text: entry)
                 inputText = ""
             }
             .frame(height: 20)
@@ -129,6 +133,35 @@ struct ContentView: View {
         let timestamp = String(line[line.startIndex...closeBracket])
         let rest = String(line[line.index(after: closeBracket)...]).trimmingCharacters(in: .init(charactersIn: " "))
         return (timestamp, rest)
+    }
+
+    @ViewBuilder
+    private var slackMenuButton: some View {
+        Menu {
+            if slackManager.isAuthenticated {
+                if slackManager.isPaused {
+                    Text("Syncing paused")
+                } else {
+                    Button("Pause Slack syncing for 1 day") {
+                        slackManager.pauseForOneDay()
+                    }
+                }
+                Divider()
+                Button("Remove Slack connection") {
+                    slackManager.disconnect()
+                }
+            } else {
+                Button("Connect to Slack") {
+                    slackManager.startOAuth()
+                }
+            }
+        } label: {
+            Image(systemName: "bubble.left")
+                .foregroundColor(slackManager.isAuthenticated && !slackManager.isPaused ? .accentColor : .secondary)
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .help(slackManager.isAuthenticated ? "Slack options" : "Connect to Slack")
     }
 
     private func chooseDirectory() {
