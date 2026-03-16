@@ -18,7 +18,7 @@ final class SlackManager: ObservableObject {
     private let keychainAccount = "slack-token"
     private let pausedUntilKey = "slackPausedUntil"
     private let port: UInt16 = 21849
-    private let redirectURI = "https://rachtsingh.github.io/oneline/callback"
+    private let redirectURI = "https://r2.rachitsingh.com/oneline/callback/index.html"
 
     private var listener: NWListener?
     private var serverTimeout: DispatchWorkItem?

@@ -4,5 +4,7 @@ DerivedData/
 .swiftpm/
 *.dmg
 reference/
+build/
 Secrets.xcconfig
 CLAUDE.md
+.DS_Store
