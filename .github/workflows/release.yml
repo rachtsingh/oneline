@@ -20,6 +20,14 @@ jobs:
       - name: Install tools
         run: brew install xcodegen
 
+      - name: Create Secrets.xcconfig
+        env:
+          SLACK_CLIENT_ID: ${{ secrets.SLACK_CLIENT_ID }}
+          SLACK_CLIENT_SECRET: ${{ secrets.SLACK_CLIENT_SECRET }}
+        run: |
+          echo "SLACK_CLIENT_ID = ${SLACK_CLIENT_ID}" > Secrets.xcconfig
+          echo "SLACK_CLIENT_SECRET = ${SLACK_CLIENT_SECRET}" >> Secrets.xcconfig
+
       - name: Generate Xcode project
         run: xcodegen generate
 
