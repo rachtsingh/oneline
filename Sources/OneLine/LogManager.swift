@@ -8,6 +8,9 @@ final class LogManager: ObservableObject {
 
     private var fileMonitor: DispatchSourceFileSystemObject?
     private var fileDescriptor: Int32 = -1
+    private var directoryMonitor: DispatchSourceFileSystemObject?
+    private var directoryDescriptor: Int32 = -1
+    private var dateCheckTimer: Timer?
     private var currentDate: String = ""
 
     private static let defaultDirectory: URL = {
@@ -25,6 +28,7 @@ final class LogManager: ObservableObject {
         }
         ensureDirectory()
         loadToday()
+        startDateCheckTimer()
     }
 
     func setDirectory(_ url: URL) {
@@ -45,8 +49,9 @@ final class LogManager: ObservableObject {
 
         ensureDirectory()
         let fileURL = todayFileURL()
+        let isNewFile = !FileManager.default.fileExists(atPath: fileURL.path)
 
-        if !FileManager.default.fileExists(atPath: fileURL.path) {
+        if isNewFile {
             FileManager.default.createFile(atPath: fileURL.path, contents: nil)
         }
 
@@ -56,6 +61,12 @@ final class LogManager: ObservableObject {
         handle.closeFile()
 
         loadFile()
+
+        // Switch from directory watching to file watching after first write
+        if isNewFile {
+            stopWatchingDirectory()
+            watchFile()
+        }
     }
 
     // MARK: - Private
@@ -85,7 +96,14 @@ final class LogManager: ObservableObject {
         currentFileName = display
 
         loadFile()
-        watchFile()
+        stopWatching()
+        stopWatchingDirectory()
+
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            watchFile()
+        } else {
+            watchDirectory()
+        }
     }
 
     private func loadFile() {
@@ -98,16 +116,12 @@ final class LogManager: ObservableObject {
         lines = content.components(separatedBy: "\n").filter { !$0.isEmpty }
     }
 
+    // MARK: - File watching
+
     private func watchFile() {
         stopWatching()
 
         let fileURL = todayFileURL()
-
-        // Create file if it doesn't exist so we can watch it
-        if !FileManager.default.fileExists(atPath: fileURL.path) {
-            FileManager.default.createFile(atPath: fileURL.path, contents: nil)
-        }
-
         fileDescriptor = open(fileURL.path, O_EVTONLY)
         guard fileDescriptor >= 0 else { return }
 
@@ -138,7 +152,66 @@ final class LogManager: ObservableObject {
         fileMonitor = nil
     }
 
+    // MARK: - Directory watching (until today's file appears)
+
+    private func watchDirectory() {
+        stopWatchingDirectory()
+
+        directoryDescriptor = open(logDirectory.path, O_EVTONLY)
+        guard directoryDescriptor >= 0 else { return }
+
+        let source = DispatchSource.makeFileSystemObjectSource(
+            fileDescriptor: directoryDescriptor,
+            eventMask: [.write],
+            queue: .main
+        )
+
+        source.setEventHandler { [weak self] in
+            guard let self else { return }
+            if FileManager.default.fileExists(atPath: self.todayFileURL().path) {
+                self.stopWatchingDirectory()
+                self.loadFile()
+                self.watchFile()
+            }
+        }
+
+        source.setCancelHandler { [weak self] in
+            guard let self else { return }
+            if self.directoryDescriptor >= 0 {
+                close(self.directoryDescriptor)
+                self.directoryDescriptor = -1
+            }
+        }
+
+        source.resume()
+        directoryMonitor = source
+    }
+
+    private func stopWatchingDirectory() {
+        directoryMonitor?.cancel()
+        directoryMonitor = nil
+    }
+
+    // MARK: - Date rollover
+
+    private func startDateCheckTimer() {
+        dateCheckTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+            self?.checkDateRollover()
+        }
+    }
+
+    private func checkDateRollover() {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd"
+        let today = formatter.string(from: Date())
+        if today != currentDate {
+            loadToday()
+        }
+    }
+
     deinit {
         stopWatching()
+        stopWatchingDirectory()
+        dateCheckTimer?.invalidate()
     }
 }

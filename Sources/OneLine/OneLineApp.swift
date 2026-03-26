@@ -20,7 +20,7 @@ struct OneLineApp: App {
         WindowGroup {
             ContentView()
         }
-        .defaultSize(width: 380, height: 300)
+        .defaultSize(width: 900, height: 680)
 
         Settings {
             CheckForUpdatesView(updater: updaterController.updater)
