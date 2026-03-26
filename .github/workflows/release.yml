@@ -43,7 +43,8 @@ jobs:
             -derivedDataPath build/DerivedData \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGN_STYLE=Manual \
-            MARKETING_VERSION="${{ steps.version.outputs.VERSION }}"
+            MARKETING_VERSION="${{ steps.version.outputs.VERSION }}" \
+            CURRENT_PROJECT_VERSION="${{ steps.version.outputs.VERSION }}"
 
       - name: Extract app from archive
         run: cp -R build/OneLine.xcarchive/Products/Applications/OneLine.app build/OneLine.app
